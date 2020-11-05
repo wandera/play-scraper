@@ -90,7 +90,7 @@ def build_collection_url(category='', collection=''):
 
 
 def send_request(method, url, data=None, params=None, headers=None,
-                 timeout=30, verify=True, allow_redirects=False):
+                 timeout=30, verify=True, allow_redirects=True):
     """Sends a request to the url and returns the response.
 
     :param method: HTTP method to use.
@@ -183,6 +183,9 @@ def parse_additional_info(soup):
                                  value_div.string)
                 if iaps:
                     value = iaps.groups()
+                else:
+                    iaps = re.search(r'(\$\d+\.\d{2}).*', value_div.string)
+                    value = iaps.groups()
             elif title_key == 'developer_info':
                 developer_email = value_div.select_one('a[href^="mailto:"]')
                 if developer_email:
@@ -237,7 +240,7 @@ def parse_app_details(soup):
     :return: a dictionary of app details
     """
     title = soup.select_one('h1[itemprop="name"] span').text
-    icon = (soup.select_one('.dQrBL img.ujDFqe')
+    icon = (soup.select_one('img[class="T75of sHb2Xb"]')
                 .attrs['src']
                 .split('=')[0])
     editors_choice = bool(
@@ -281,7 +284,7 @@ def parse_app_details(soup):
                           .text
                           .replace(',', ''))
         ratings_section = soup.select_one('div.VEF2C')
-        num_ratings = [int(rating.attrs['title'].replace(',', ''))
+        num_ratings = [int(rating.attrs['style'].replace('width: ', '').replace('%',''))
                        for rating in ratings_section.select(
                            'div span[style^="width:"]')]
         for i in range(5):
@@ -309,7 +312,7 @@ def parse_app_details(soup):
     free = (price == '0')
 
     additional_info_data = parse_additional_info(
-        soup.select_one('.xyOfqd'))
+        soup.select_one('.IxB2fe'))
 
     offers_iap = bool(additional_info_data.get('iap_range'))
 
@@ -342,69 +345,12 @@ def parse_app_details(soup):
 
     return data
 
-
 def parse_card_info(soup):
-    """Extracts basic app info from the app's card. Used when parsing pages
-    with lists of apps.
-
-    :param soup: a BeautifulSoup object of an app's card
-    :return: a dictionary of available basic app info
-    """
-    app_id = soup.attrs['data-docid']
-    url = urljoin(s.BASE_URL,
-                  soup.select_one('a.card-click-target').attrs['href'])
-    icon = urljoin(
-        s.BASE_URL,
-        soup.select_one('img.cover-image').attrs['src'].split('=')[0])
-    title = soup.select_one('a.title').attrs['title']
-
-    dev_soup = soup.select_one('a.subtitle')
-    developer = dev_soup.attrs['title']
-    try:
-        developer_id = dev_soup.attrs['href'].split('=')[1]
-    except IndexError:
-        developer_id = None
-
-    description = soup.select_one('div.description').text.strip()
-    score = soup.select_one('div.tiny-star')
-    if score is not None:
-        score = score.attrs['aria-label'].strip().split(' ')[1]
-
-    try:
-        price = soup.select_one('span.display-price').text
-    except AttributeError:
-        try:
-            # Pre-register apps are 'Coming Soon'
-            price = soup.select_one('a.price').text
-        except AttributeError:
-            # Country restricted, no price or buttons shown
-            price = None
-
-    full_price = None
-    if price is not None:
-        try:
-            full_price = soup.select_one('span.full-price').text
-        except AttributeError:
-            full_price = None
-
-    free = (price is None)
-    if free is True:
-        price = '0'
+    app_id = soup.select_one('a').attrs['href'].split('=')[1]
 
     return {
-        'app_id': app_id,
-        'url': url,
-        'icon': icon,
-        'title': title,
-        'developer': developer,
-        'developer_id': developer_id,
-        'description': description,
-        'score': score,
-        'full_price': full_price,
-        'price': price,
-        'free': free
+        'app_id' : app_id
     }
-
 
 def parse_app_details_response_hook(response, *args, **kwargs):
     """

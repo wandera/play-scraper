@@ -7,6 +7,11 @@ COLLECTIONS = {
     'TOP_PAID': 'topselling_paid',
     'TOP_GROSSING': 'topgrossing',
     'TRENDING': 'movers_shakers',
+    'NEWLY_RELEASED_GAMES': 'promotion_3000791_new_releases_games',
+    'NEWLY_RELEASED_APPS': 'promotion_3000792_new_releases_apps',
+    'PREREGISTERED_GAMES': 'promotion_3000000d51_pre_registration_games',
+    'RECENTLY_UPDATED': 'promotion_updated_apps',
+    'LIGHTWEIGHT_APPS': 'promotion_games_low_apk'
 }
 
 CATEGORIES = {

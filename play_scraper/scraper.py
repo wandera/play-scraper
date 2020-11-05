@@ -131,7 +131,7 @@ class PlayScraper(object):
         else:
             soup = BeautifulSoup(response.content, 'lxml', from_encoding='utf8')
             apps = [parse_card_info(app_card)
-                    for app_card in soup.select('div[data-uitype="500"]')]
+                    for app_card in soup.select('div.wXUyZd')]
 
         return apps
 
