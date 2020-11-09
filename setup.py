@@ -3,8 +3,8 @@ from codecs import open
 from setuptools import setup
 
 
-with open('play_scraper/__init__.py', 'r') as f:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
+with open('play_scraper/version.py', 'r') as f:
+    version = re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]',
                         f.read(), re.MULTILINE).group(1)
 
 with open('README.md', 'r', 'utf-8') as f:
