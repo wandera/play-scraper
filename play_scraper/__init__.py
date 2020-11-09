@@ -6,7 +6,7 @@ Google Play Store Scraper
 A web scraper for the Google Play Android app store.
 """
 
-from version import VERSION
+from play_scraper.version import VERSION
 
 __version__ = VERSION
 
