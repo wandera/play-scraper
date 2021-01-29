@@ -125,6 +125,22 @@ def send_request(method, url, data=None, params=None, headers=None,
 
     return response
 
+def normalise_iaps(iaps: list):
+    """
+    Converts variable length list of parsed In-App Purchase range into tuple
+
+    :param iaps: a list containing parsed In-App Purchase range (list contains either 1 or 2 values, depending on the app)
+    :return: tuple containing In-App Purchase range.
+                If only one value for In-App Purchase is present in GPlay, tuple contains this value in both places
+    """
+    if len(iaps) == 1:
+        iaps.append(iaps[0])
+        return tuple(iaps)
+    elif len(iaps) == 2:
+        return tuple(iaps)
+    else:
+        return None
+
 
 def parse_additional_info(soup):
     """Parses an app's additional information section on its detail page.
@@ -179,13 +195,11 @@ def parse_additional_info(soup):
                 value = [ielement.strip()
                          for ielement in value_div.strings]
             elif title_key == 'iap_range':
-                iaps = re.search(r'(\$\d+\.\d{2}) - (\$\d+\.\d{2})',
-                                 value_div.string)
+                iaps = re.findall(r'(\$\d+\.\d{2})', value_div.string)
                 if iaps:
-                    value = iaps.groups()
+                    value = normalise_iaps(iaps)
                 else:
-                    iaps = re.search(r'(\$\d+\.\d{2}).*', value_div.string)
-                    value = iaps.groups()
+                    value = None
             elif title_key == 'developer_info':
                 developer_email = value_div.select_one('a[href^="mailto:"]')
                 if developer_email:
@@ -284,11 +298,9 @@ def parse_app_details(soup):
                           .text
                           .replace(',', ''))
         ratings_section = soup.select_one('div.VEF2C')
-        num_ratings = [int(rating.attrs['style'].replace('width: ', '').replace('%',''))
-                       for rating in ratings_section.select(
-                           'div span[style^="width:"]')]
-        for i in range(5):
-            histogram[5 - i] = num_ratings[i]
+        relative_column_sizes = [int(rating.attrs['style'].replace('width: ', '').replace('%', ''))
+                                 for rating in ratings_section.select('div span[style^="width:"]')]
+        histogram = _compute_histogram(relative_column_sizes, reviews)
     except AttributeError:
         reviews = 0
 
@@ -344,6 +356,38 @@ def parse_app_details(soup):
     data.update(additional_info_data)
 
     return data
+
+def _scale_histogram(histogram):
+    """
+    Scales the histogram into relative numbers - from width 25% it makes relative computation depending on all other ratings
+
+    :param histogram: dictionary containing widths of star rating columns in GPlay
+    :return: dictionary of the scaled star ratings. Scaling happens according to the widths reported by GPlay
+    """
+    total_histogram_parts = sum(histogram)
+    scaled_histogram = {}
+    key = 0
+    for column_size in histogram:
+        scaled_histogram[5 - key] = round(float(column_size) / total_histogram_parts, 2)
+        key += 1
+
+    return scaled_histogram
+
+def _compute_histogram(relative_column_sizes: list, reviews: int):
+    """
+    Computes approximate ratings from reported star rating widths.
+    PLEASE NOTE, THERE MIGHT BE A DEVIATION OF 1% FROM ALL REVIEWS.
+
+    :param relative_column_sizes: star column sizes reported by GPlay
+    :param reviews: number of reviews reported by GPlay
+    :return: dictionary containing approximate computation of  
+    """
+    scaled_histogram = _scale_histogram(relative_column_sizes)
+    computed_histogram = {}
+    for key, value in scaled_histogram.items():
+        computed_histogram[key] = int(round(value * reviews))
+
+    return computed_histogram
 
 def parse_card_info(soup):
     app_id = soup.select_one('a').attrs['href'].split('=')[1]
