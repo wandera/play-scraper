@@ -192,8 +192,7 @@ def parse_additional_info(soup):
                 value = [rating.strip()
                          for rating in value_div.strings][:-1]
             elif title_key == 'interactive_elements':
-                value = [ielement.strip()
-                         for ielement in value_div.strings]
+                value = value = value_div.text.split(', ')
             elif title_key == 'iap_range':
                 iaps = re.findall(r'(\$\d+\.\d{2})', value_div.string)
                 if iaps:
@@ -279,7 +278,7 @@ def parse_app_details(soup):
         video = None
 
     description_soup = soup.select_one(
-        'div[itemprop="description"] content div')
+        'div[itemprop="description"] span div')
     if description_soup:
         description = '\n'.join(description_soup.stripped_strings)
         description_html = description_soup.encode_contents()
