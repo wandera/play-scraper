@@ -192,7 +192,7 @@ def parse_additional_info(soup):
                 value = [rating.strip()
                          for rating in value_div.strings][:-1]
             elif title_key == 'interactive_elements':
-                value = value = value_div.text.split(', ')
+                value = value_div.text.split(', ')
             elif title_key == 'iap_range':
                 iaps = re.findall(r'(\$\d+\.\d{2})', value_div.string)
                 if iaps:
